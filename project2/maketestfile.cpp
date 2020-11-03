@@ -15,15 +15,17 @@ char buf[100];
 
 int main(int argc, char* argv[])
 {
-    if(argc != 2){
-        fprintf(stderr, "exe, <filelen>\n");
+    if(argc != 4){
+        fprintf(stderr, "exe, <filelen> <min> <max>\n");
         return(EXIT_FAILURE);
     }
     int len = atoi(argv[1]);
+    int min = atoi(argv[2]);
+    int max = atoi(argv[3]);
     srand(time(NULL));
     FILE* fout = fopen("test.txt", "wt");
     for(int i=0; i<len; i++){
-        int wordlen = rand() % 15 + 10;
+        int wordlen = rand() % (max-min) + min;
         int j=0;
         for(j=0; j<wordlen; j++){
             int mod = rand() % 3;

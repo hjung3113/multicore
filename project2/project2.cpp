@@ -45,10 +45,7 @@ int main(int argc, char* argv[])
 
     words = (char **)malloc(sizeof(char *)*N);
     FILE* fin = fopen(argv[1], "r");
-    for (int i=0; i<startidx; i++)
-    {
-        fscanf(fin, "%s", buf);
-    }
+
     for (int i=0; i<N; i++)
     {
         fscanf(fin, "%s ", buf);
@@ -66,8 +63,8 @@ int main(int argc, char* argv[])
     ///////////////////////////////////////////////////////
 
     clock_gettime( CLOCK_REALTIME, &stop);
-    
-    for(int i = 0; i < printn; i++){
+
+    for(int i = startidx; i < startidx+printn; i++){
         printf("%s\n", words[i]);
     }
     // print results
