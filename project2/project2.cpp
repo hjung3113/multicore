@@ -7,6 +7,7 @@
 #include <iostream>
 #include <omp.h>
 #include <cstring>
+#include <atomic>
 
 using namespace std;
 
@@ -40,7 +41,7 @@ int main(int argc, char* argv[])
 
     if (startidx + printn > N) printn = N-startidx;
 
-    if (thread_num > omp_get_num_threads()) thread_num = omp_get_num_threads();
+    // if (thread_num > omp_get_num_threads()) thread_num = omp_get_num_threads();
     omp_set_num_threads(thread_num);
 
     words = (char **)malloc(sizeof(char *)*N);
@@ -57,7 +58,7 @@ int main(int argc, char* argv[])
     clock_gettime( CLOCK_REALTIME, &start);
 
     ///////////////////////////////////////////////////////
-
+    //#pragma omp parallel
     msd();
     
     ///////////////////////////////////////////////////////
@@ -83,17 +84,24 @@ void msd() {
     msd(0, N, 0);
 }
 
+struct padding_int{
+    atomic<int> val;
+    char padding[60];
+};
+
 void msd(int lo, int hi, int d) {
-    int count[CHARMAX];
+    padding_int count[CHARMAX];
     // int pcount[CHARMAX];
     char** temp;
     
     if (hi <= lo) return;
-    memset((void*)&count, 0, sizeof(int)*CHARMAX);
+
+    memset((void*)&count, 0, sizeof(padding_int)*CHARMAX);
     temp = (char**)malloc(sizeof(char*)*N);
     
+    #pragma omp parallel for
     for (int i = lo; i < hi; i++)
-        count[words[i][d]]++;
+        count[words[i][d]].val++;
 
     // #pragma omp parallel shared(count, words, lo, hi) private(pcount)
     // {
@@ -110,25 +118,30 @@ void msd(int lo, int hi, int d) {
     //     }
     // }
 
-    
     int tmp = 0;
     for (int k = 0; k < CHARMAX; k++){
-        swap(tmp, count[k]);
-        tmp += count[k];
+        int temp = tmp;
+        tmp = count[k].val.load();
+        count[k].val.store(temp);
+        tmp += temp;
     }
     
+    #pragma omp parallel for
     for (int i = lo; i < hi; i++)
-        temp[count[words[i][d]]++] = words[i];
+        temp[count[words[i][d]].val++] = words[i];
 
-    // #pragma omp parallel for schedule(static)    
+    #pragma omp parallel for
     for (int i = lo; i < hi; i++)
         words[i] = temp[i - lo];
     
     free(temp);    
     
-    // #pragma omp parallel for schedule(static)
-    for (int i = 1; i < CHARMAX-1; i++){ // 0 -> string end
-        if(count[i+1]-count[i] == 1) continue;
-        msd(lo + count[i], lo + count[i+1], d+1);
+    #pragma omp parallel
+    {
+        #pragma omp for nowait schedule(dynamic)
+        for (int i = 1; i < CHARMAX-1; i++){ // 0 -> string end
+            if(count[i+1].val.load()-count[i].val.load() == 1) continue;
+            msd(lo + count[i].val.load(), lo + count[i+1].val.load(), d+1);
+        }
     }
 }
