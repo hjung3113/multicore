@@ -8,10 +8,11 @@
 #include <omp.h>
 #include <cstring>
 #include <atomic>
+// #include <algorithm>
 
 using namespace std;
 
-#define threadh 8
+#define threadh 32
 #define MAXLEN 1000
 #define CHARMAX 128
 #define BILLION  1000000000L
@@ -23,6 +24,15 @@ int thread_num;
 
 void msd();
 void msd(int, int, int);
+void insertion_sort(int lo, int hi);
+
+// bool compare(char* a, char* b){
+//     if(strcmp(a, b) < 0){
+//         return true;
+//     }else{
+//         return false;
+//     }
+// }
 
 int main(int argc, char* argv[])
 {
@@ -59,7 +69,9 @@ int main(int argc, char* argv[])
 
     ///////////////////////////////////////////////////////
     //#pragma omp parallel
+    //insertion_sort(0, N);
     msd();
+    //sort(words, words+N, compare);
     
     ///////////////////////////////////////////////////////
 
@@ -89,12 +101,28 @@ struct padding_int{
     char padding[60];
 };
 
+void insertion_sort(int lo, int hi)
+{
+    for(int i=lo+1; i<hi; i++){
+        char* key = words[i];
+        int j;
+        for(j=i-1; j>=lo && strcmp(words[j], key)>0; j--){
+            words[j+1] = words[j];
+        }
+        words[j+1] = key;
+    }
+}
+
 void msd(int lo, int hi, int d) {
     padding_int count[CHARMAX];
     // int pcount[CHARMAX];
     char** temp;
     
     if (hi <= lo) return;
+    if (hi - lo < threadh) {
+        insertion_sort(lo, hi);
+        return;
+    }
 
     memset((void*)&count, 0, sizeof(padding_int)*CHARMAX);
     temp = (char**)malloc(sizeof(char*)*N);
