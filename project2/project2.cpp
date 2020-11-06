@@ -20,6 +20,7 @@ using namespace std;
 int N; // sorted no
 
 char** words;
+char** temp;
 int thread_num;
 
 void msd();
@@ -55,6 +56,7 @@ int main(int argc, char* argv[])
     omp_set_num_threads(thread_num);
 
     words = (char **)malloc(sizeof(char *)*N);
+    temp = (char **)malloc(sizeof(char *)*N);
     FILE* fin = fopen(argv[1], "r");
 
     for (int i=0; i<N; i++)
@@ -87,6 +89,7 @@ int main(int argc, char* argv[])
         free(words[i]);
     }
     free(words);
+    free(temp);
     fclose(fin);
 
     return (EXIT_SUCCESS);
@@ -116,7 +119,6 @@ void insertion_sort(int lo, int hi)
 void msd(int lo, int hi, int d) {
     padding_int count[CHARMAX];
     // int pcount[CHARMAX];
-    char** temp;
     
     if (hi <= lo) return;
     if (hi - lo < threadh) {
@@ -125,7 +127,6 @@ void msd(int lo, int hi, int d) {
     }
 
     memset((void*)&count, 0, sizeof(padding_int)*CHARMAX);
-    temp = (char**)malloc(sizeof(char*)*N);
     
     #pragma omp parallel for
     for (int i = lo; i < hi; i++)
@@ -148,22 +149,20 @@ void msd(int lo, int hi, int d) {
 
     int tmp = 0;
     for (int k = 0; k < CHARMAX; k++){
-        int temp = tmp;
+        int tmp2 = tmp;
         tmp = count[k].val.load();
-        count[k].val.store(temp);
-        tmp += temp;
+        count[k].val.store(tmp2);
+        tmp += tmp2;
     }
     
     #pragma omp parallel for
     for (int i = lo; i < hi; i++)
-        temp[count[words[i][d]].val++] = words[i];
+        temp[lo + count[words[i][d]].val++] = words[i];
 
     #pragma omp parallel for
     for (int i = lo; i < hi; i++)
-        words[i] = temp[i - lo];
-    
-    free(temp);    
-    
+        words[i] = temp[i];
+
     #pragma omp parallel
     {
         #pragma omp for nowait schedule(dynamic)
