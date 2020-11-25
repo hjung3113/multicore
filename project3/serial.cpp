@@ -6,6 +6,7 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <queue>
 
 #define BUFSIZE 100
 
@@ -15,7 +16,7 @@ bool **board;
 int NumGenerate;
 int lx, ly;
 char buf[100];
-vector <pair<int, int>> lives;
+queue <pair<int, int>> lives;
 
 void printboard(){
     for(int i=1;i<=ly;i++){
@@ -45,13 +46,13 @@ void updateboard(){
 
     int nlives = lives.size();
     while(nlives--){
-        pair<int, int> cur = lives.back();
-        lives.pop_back();
+        pair<int, int> cur = lives.front();
+        lives.pop();
 
         int x,y;
         x=cur.first;
         y=cur.second;
-
+        // printf("out x: %d, y:%d\n", x, y);
         for(int a=y-1; a<=y+1; a++){
             if(a<1 || a>ly) continue;
             for(int b=x-1; b<=x+1; b++){
@@ -65,17 +66,17 @@ void updateboard(){
                         if(backup[b+d][a+c] == true) alive++;
                     }
                 }
-
-                if(board[b][a] == true){
+                // printf("x : %d, y : %d, alive : %d\n", b, a, alive);
+                if(backup[b][a] == true){
                     if(alive < 2) board[b][a] = false;
                     if(alive > 3) board[b][a] = false;
                     else{
-                        lives.push_back(make_pair(b,a));
+                        lives.push(make_pair(b,a));
                     }
                 }else{
                     if(alive == 3) {
                         board[b][a] = true;
-                        lives.push_back(make_pair(b,a));
+                        lives.push(make_pair(b,a));
                     }
                 }
             }
@@ -91,6 +92,7 @@ int main(int argc, char* argv[])
     }
     string filename(argv[1]);
     NumGenerate = atoi(argv[2]);
+    int iter = NumGenerate;
     lx = atoi(argv[3]);
     ly = atoi(argv[4]);
     // bool board[lx+2][ly+2] = {};
@@ -115,18 +117,20 @@ int main(int argc, char* argv[])
             y = stoi(_y);
 
             board[x+1][y+1] = true;
-            lives.push_back(make_pair(x+1,y+1));
+            printf("in x: %d, y: %d\n", x+1, y+1);
+            lives.push(make_pair(x+1,y+1));
         }
     }else {
         fprintf(stderr, "err : nofile\n");
         exit(1);
     }
 
-    while(true){
+    while(iter--){
         printboard();
         updateboard();
         usleep(200000);
     }
+    printboard();
 
     for(int i=0;i<lx+2;i++) free(board[i]);
     free(board);
