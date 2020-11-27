@@ -19,14 +19,20 @@ char buf[100];
 queue <pair<int, int>> lives;
 
 void printboard(){
-    for(int i=1;i<=ly;i++){
+/*    for(int i=1;i<=ly;i++){
         for(int j=1; j<=lx; j++){
             if(board[j][i] == false) printf(". ");
             else printf("0 ");
         }
         printf("\n");
-    }
+    }*/
     printf("\n");
+	for(int i=1; i<=ly; i++){
+		for(int j=1; j<=lx;j++){
+			if(board[j][i] == false) continue;
+			else printf("%d %d\n", j-1,i-1);
+		}
+	}
 }
 
 void updateboard(){
@@ -101,7 +107,7 @@ int main(int argc, char* argv[])
         board[i] = (bool*)calloc(sizeof(bool), ly+2);
     }
 
-    printf("%d %d\n", lx, ly);
+//    printf("%d %d\n", lx, ly);
     ifstream readfile(filename);
     if(readfile.is_open()){
         string line, _x, _y;
@@ -117,7 +123,7 @@ int main(int argc, char* argv[])
             y = stoi(_y);
 
             board[x+1][y+1] = true;
-            printf("in x: %d, y: %d\n", x+1, y+1);
+  //          printf("in x: %d, y: %d\n", x+1, y+1);
             lives.push(make_pair(x+1,y+1));
         }
     }else {
@@ -126,7 +132,7 @@ int main(int argc, char* argv[])
     }
 
     while(iter--){
-        printboard();
+//        printboard();
         updateboard();
         usleep(200000);
     }
